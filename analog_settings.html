@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css">
+    </head>
+    <body>
+        <div class="container">
+            <br>
+            <div class="text-center">
+                <h1>Analog Settings</h1>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-2">
+                    <h3>SAMPLE</h3>
+                </div>
+                <div class="col-md-10">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-primary" onclick="sample1()">Sample 1</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="example">Contoh Input Data Manual<br><small>(tanggal) (jam) (tma)</small></label>
+                        <textarea class="form-control" id="example" rows="10" disabled></textarea>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="manual">Input Data Manual</label>
+                        <textarea class="form-control" id="manual" rows="10"></textarea>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="telemetri">Input Data Telemetri</label>
+                        <textarea class="form-control" id="telemetri" rows="10"></textarea>
+                    </div>
+                </div>
+                <div class="container text-center">
+                    <p>Contoh input data manual di atas bisa digunakan dengan
+                        data telemetri dari <a href="http://hidrologi.bbws-bsolo.net/api/sensor/1805-1?sampling=2018/12/2">link ini</a>
+                        .
+                    </p>
+                </div>
+            </div>
+            <div class="form-group text-center">
+                <a href="#chart" onclick="updateChart()" class="btn btn-primary">Tampilkan</a>
+            </div>
+            <hr>
+            <div class="container" id="chart">
+                <canvas id="canvas" style="display: block; width: 723px; height: 361px;" width="2169" height="1083" class="chartjs-render-monitor"></canvas>
+            </div>
+            <div class="form-group text-center">
+                <a href="#result" onclick="calculate()" class="btn btn-primary">Hitung</a>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-3">
+                    <h3>Perhitungan</h3>
+                    <div class="container">
+                        <ul>
+                            <li>Dari data-data yg dimasukkan, diambil 2 sampel data kemudian Faktor dan Offset dihitung dengan rumus y = mx + c</li>
+                            <li>Dengan y = Data Manual, x = Data Telemetri, m = Faktor</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-9" id="result">
+
+                </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js"></script>
+        <script>
+let months = {
+    1: 'Januari',
+    2: 'Februari',
+    3: 'Maret',
+    4: 'April',
+    5: 'Mei',
+    6: 'Juni',
+    7: 'Juli',
+    8: 'Agustus',
+    9: 'September',
+    10: 'Oktober',
+    11: 'November',
+    12: 'Desember'
+}
+let datelist = ['January', 'February', 'March', 'April', 'May', 'June', 'July'];
+var teleData = [
+    36,
+    46,
+    74,
+    41,
+    51,
+    61,
+    71
+];
+var manualData = [
+    32,
+    49,
+    null,
+    41,
+    null,
+    null,
+    67
+];
+let config = {};
+
+window.onload = function() {
+    let exampleList = [
+        "2018-12-02 06 93.69",
+        "2018-12-02 12 93.73",
+        "2018-12-02 18 93.68"
+    ];
+    let example = exampleList.join("\n");
+    document.getElementById("example").value = example;
+
+	let ctx = document.getElementById('canvas').getContext('2d');
+    config = {
+		data: {
+			labels: datelist,
+			datasets: [{
+				label: 'Telemetri',
+				borderColor: 'rgba(0, 255, 255, 1)',
+				backgroundColor: 'rgba(0, 255, 255, 0.5)',
+				fill: false,
+                radius: 1,
+				data: teleData,
+				yAxisID: 'y-axis-1',
+			}, {
+				label: 'Manual',
+				borderColor: 'rgba(0, 0, 255, 0.5)',
+				backgroundColor: 'rgba(0, 0, 255, 0.5)',
+				fill: false,
+                type: 'bubble',
+                radius: 5,
+				data: manualData,
+				yAxisID: 'y-axis-2'
+			}]
+		},
+		options: {
+			responsive: true,
+			stacked: false,
+			title: {
+				display: true,
+				text: 'Perbandingan data telemetri dan manual'
+			},
+            tooltips: {
+                mode: 'index',
+                intersect: false,
+            },
+            hover: {
+                mode: 'nearest',
+                intersect: true
+            },
+			scales: {
+				yAxes: [{
+					type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+					display: true,
+					position: 'left',
+					id: 'y-axis-1',
+				}, {
+					type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+					display: true,
+					position: 'right',
+					id: 'y-axis-2',
+
+					// grid line settings
+					gridLines: {
+						drawOnChartArea: false, // only want the grid lines for one axis to show up
+					},
+				}],
+			}
+		}
+	};
+	window.myLine = Chart.Line(ctx, config);
+};
+
+function readTextFile(file){
+    var rawFile = new XMLHttpRequest();
+    rawFile.open("GET", file, false);
+    rawFile.onreadystatechange = function ()
+    {
+        if(rawFile.readyState === 4)
+        {
+            if(rawFile.status === 200 || rawFile.status == 0)
+            {
+                var allText = rawFile.responseText;
+                alert(allText);
+            }
+        }
+    }
+    rawFile.send(null);
+}
+
+function sample1() {
+    let data = readTextFile("file:///home/rmyrnvn/Vault/Work/BBWS_BSolo/prinus/html/sample1manual.txt");
+    console.log(data);
+}
+
+function updateChart() {
+    let manualList =document.getElementById("manual").value.split("\n");
+    let telemetriJson = JSON.parse(document.getElementById("telemetri").value);
+    let manualDict = {};
+    let teleDict = {};
+    let labels = [];
+
+    telemetriJson.periodic.forEach(function (tele) {
+        let raw_samp = new Date(tele.sampling);
+        let sampling = `${raw_samp.getDate()} ${months[raw_samp.getMonth()]} ${raw_samp.getFullYear()}, ${raw_samp.getHours()}:${raw_samp.getMinutes()}`
+        teleDict[sampling] = tele.wl_scale;
+        if (!labels.includes(sampling)){
+            labels.push(sampling);
+        }
+    });
+    manualList.forEach(function (manual) {
+        let manArr = manual.split(" ");
+        let raw_samp = new Date(`${manArr[0]} ${manArr[1]}:00:00`);
+        let sampling = `${raw_samp.getDate()} ${months[raw_samp.getMonth()]} ${raw_samp.getFullYear()}, ${raw_samp.getHours()}:${raw_samp.getMinutes()}`
+        manualDict[sampling] = parseFloat(manArr[2]);
+        if (!labels.includes(sampling)){
+            labels.push(sampling);
+        }
+    });
+    labels.sort();
+
+    let teleDatasets = [];
+    let manualDatasets = [];
+    labels.forEach(function(sampl) {
+        teleDatasets.push(teleDict[sampl]);
+        if (sampl in manualDict) {
+            manualDatasets.push(manualDict[sampl]);
+        } else {
+            manualDatasets.push(null);
+        }
+    });
+    // console.log(labels);
+    // console.log(teleDict);
+    // console.log(manualDict);
+
+    config.data.labels = labels;
+    config.data.datasets.forEach(function(dataset) {
+        if (dataset.label == "Manual") {
+            dataset.data = manualDatasets;
+            console.log("Manual Datasets updated!");
+        }
+        if (dataset.label == "Telemetri") {
+            dataset.data = teleDatasets;
+            console.log("Telemetri Datasets updated!");
+        }
+    });
+    window.myLine.update();
+
+    // get data to compare
+    teleData = [];
+    manualData = [];
+    for (sampl in manualDict) {
+        if (!isNaN(manualDict[sampl])) {
+            manualData.push(manualDict[sampl]);
+            teleData.push(teleDict[sampl]);
+        }
+    }
+    console.log(manualData);
+    console.log(teleData);
+}
+
+function calculate() {
+    console.log("Calculating");
+    console.log(manualData);
+    console.log(teleData);
+
+    let functionList = [];
+    teleData.forEach(function(tele1, i1) {
+        teleData.slice(i1 + 1).forEach(function(tele2, i2) {
+            // console.log(`${manualData[i2 + i1 + 1]} - ${manualData[i1]}/(${tele2} - ${tele1})`);
+            if (tele2 - tele1 != 0) {
+                let factor = (manualData[i2 + i1 + 1] - manualData[i1])/(tele2 - tele1);
+                let offset = manualData[i2 + i1 + 1] - (tele2 * factor);
+
+                if (factor == 0) {
+                    return
+                }
+
+                // calculate error
+                err = 0;
+                teleData.forEach(function(tele3, i3) {
+                    err += Math.abs(manualData[i3] - ((tele3*factor) + offset))
+                    console.log(`Manual : ${manualData[i3]}, Prediction : ${(tele3*factor) + offset}`)
+                });
+                err = err / teleData.length;
+                console.log(teleData.length)
+                functionList.push([factor, offset, err]);
+            }
+        });
+    });
+    functionList.sort(function(a, b) {
+        return a[2] - b[2];
+    })
+    console.log(functionList);
+    let result = document.getElementById('result');
+    result.innerHTML = "<h3>Result</h3> \
+                        <table class='table table-bordered'> \
+                            <thead> \
+                                <tr><th>No</th><th>Faktor</th><th>Offset</th><th>Standar Error</th></tr> \
+                            </thead> \
+                            <tbody id='functionResult'></tbody> \
+                        </table>";
+    let functionResult = document.getElementById('functionResult');
+    functionList.forEach(function(pair, i) {
+        functionResult.innerHTML += "<tr>" + `<td>${i + 1}</td><td>${pair[0]}</td><td>${pair[1]}</td><td>${pair[2]}</td>` + "</tr>";
+    });
+}
+	    </script>
+    </body>
+</html>
