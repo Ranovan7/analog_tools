@@ -28,29 +28,17 @@
             </div>
             <hr>
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
-                        <label for="example">Contoh Input Data Manual<br><small>(tanggal) (jam) (tma)</small></label>
+                        <label for="example">Contoh Input Data | <small>(tanggal) (jam) (telemetri) (referensi / manual)</small></label>
                         <textarea class="form-control" id="example" rows="10" disabled></textarea>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
-                        <label for="manual">Input Data Manual</label>
-                        <textarea class="form-control" id="manual" rows="10"></textarea>
+                        <label for="manual">Input Data</label>
+                        <textarea class="form-control" id="tmainput" rows="10"></textarea>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="telemetri">Input Data Telemetri</label>
-                        <textarea class="form-control" id="telemetri" rows="10"></textarea>
-                    </div>
-                </div>
-                <div class="container text-center">
-                    <p>Contoh input data manual di atas bisa digunakan dengan
-                        data telemetri dari <a href="http://hidrologi.bbws-bsolo.net/api/sensor/1711-8?sampling=2019/2/24">link ini</a>
-                        .
-                    </p>
                 </div>
             </div>
             <div class="form-group text-center">
@@ -122,9 +110,9 @@ let config = {};
 
 window.onload = function() {
     let exampleList = [
-        "2019-02-24 06 43.32",
-        "2019-02-24 12 41.66",
-        "2019-02-24 18 41.10"
+        "2019-02-24 06 560 43.32",
+        "2019-02-24 12 502 41.66",
+        "2019-02-24 18 454 41.10"
     ];
     let example = exampleList.join("\n");
     document.getElementById("example").value = example;
@@ -208,47 +196,21 @@ function readTextFile(file){
 }
 
 function sample1() {
-    // fetch telemetri data
-    fetch(`https://api.myjson.com/bins/175fpq`)
-        .then(response => response.json())
-        .then(function(data) {
-                console.log(data);
-                document.getElementById("telemetri").value = JSON.stringify(data);
-            }
-        )
-        .catch(e => console.log(`Error found : ${e}`))
-
-    // fetch manual data
-    fetch(`https://api.myjson.com/bins/1c8psa`)
-        .then(response => response.json())
-        .then(function(data) {
-                console.log(data);
-                document.getElementById("manual").value = data.data;
-            }
-        )
-        .catch(e => console.log(`Error found : ${e}`))
+    document.getElementById("tmainput").value = "2019-03-05 06 615 43.00\n2019-03-05 12 704 44.04\n2019-03-05 18 726 44.21\n2019-03-06 06 795 45.14\n2019-03-06 12 812 45.39\n2019-03-06 18 803 45.25\n2019-03-07 06 804 45.27\n2019-03-07 12 824 45.47\n2019-03-07 18 855 45.82\n2019-03-08 06 904 46.41\n2019-03-08 12 894 46.32\n2019-03-08 18 856 45.93\n2019-03-09 06 748 44.56\n2019-03-09 12 660 43.57\n2019-03-09 18 564 42.40";
 }
 
 function updateChart() {
-    let manualList =document.getElementById("manual").value.split("\n");
-    let telemetriJson = JSON.parse(document.getElementById("telemetri").value);
+    let manualList =document.getElementById("tmainput").value.split("\n");
     let manualDict = {};
     let teleDict = {};
     let labels = [];
 
-    telemetriJson.periodic.forEach(function (tele) {
-        let raw_samp = new Date(tele.sampling);
-        let sampling = `${raw_samp.getDate()} ${months[raw_samp.getMonth()+1]} ${raw_samp.getFullYear()}, ${raw_samp.getHours()}:${raw_samp.getMinutes()}`
-        teleDict[sampling] = tele.wl_scale;
-        if (!labels.includes(sampling)){
-            labels.push(sampling);
-        }
-    });
     manualList.forEach(function (manual) {
         let manArr = manual.split(" ");
         let raw_samp = new Date(`${manArr[0]} ${manArr[1]}:00:00`);
         let sampling = `${raw_samp.getDate()} ${months[raw_samp.getMonth()+1]} ${raw_samp.getFullYear()}, ${raw_samp.getHours()}:${raw_samp.getMinutes()}`
-        manualDict[sampling] = parseFloat(manArr[2]);
+        manualDict[sampling] = parseFloat(manArr[3]);
+        teleDict[sampling] = parseFloat(manArr[2]);
         if (!labels.includes(sampling)){
             labels.push(sampling);
         }
