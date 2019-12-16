@@ -27,45 +27,67 @@
                 </div>
             </div>
             <hr>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="example">Contoh Input Data | <small>(tanggal) (jam) (telemetri) (referensi / manual)</small></label>
-                        <textarea class="form-control" id="example" rows="10" disabled></textarea>
+            <section id="input_data">
+                <div>
+                    <h3><b>1. Masukkan Data</b></h3>
+                    <p>Masukkan data telemetri dan manual dengan format : "(tanggal) (jam) (telemetri) (referensi / manual)", di kolom kanan</p>
+                    <p>Kemudian klik tombol "Tampilkan" untuk melihat grafik</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="example">Contoh Input Data</label>
+                            <textarea class="form-control" id="example" rows="10" disabled></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="manual">Input Data</label>
+                            <textarea class="form-control" id="tmainput" rows="10"></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="manual">Input Data</label>
-                        <textarea class="form-control" id="tmainput" rows="10"></textarea>
-                    </div>
+                <div class="form-group text-center">
+                    <a href="#watch_and_learn" onclick="updateChart()" class="btn btn-primary">Tampilkan</a>
                 </div>
-            </div>
-            <div class="form-group text-center">
-                <a href="#chart" onclick="updateChart()" class="btn btn-primary">Tampilkan</a>
-            </div>
+            </section>
             <hr>
-            <div class="container" id="chart">
-                <canvas id="canvas" style="display: block; width: 723px; height: 361px;" width="2169" height="1083" class="chartjs-render-monitor"></canvas>
-            </div>
-            <div class="form-group text-center">
-                <a href="#result" onclick="calculate()" class="btn btn-primary">Hitung</a>
-            </div>
-            <hr>
-            <div class="row">
-                <div class="col-md-3">
-                    <h3>Perhitungan</h3>
-                    <div class="container">
-                        <ul>
-                            <li>Dari data-data yg dimasukkan, diambil 2 sampel data kemudian Faktor dan Offset dihitung dengan rumus y = mx + c</li>
-                            <li>Dengan y = Data Manual, x = Data Telemetri, m = Faktor</li>
-                        </ul>
+            <section id="watch_and_learn">
+                <div>
+                    <h3><b>2. Visualisasi dan Perhitungan</b></h3>
+                    <p>Grafik di bawah menampilkan perbandingan pola antara data telemetri dan data manual</p>
+                    <div class="form-group">
+                        <a href="#hasil" onclick="calculate()" class="btn btn-primary">Hitung</a>
                     </div>
                 </div>
-                <div class="col-md-9" id="result">
+                <div class="container">
+                    <canvas id="canvas" style="display: block; width: 723px; height: 361px;" width="2169" height="1083" class="chartjs-render-monitor"></canvas>
+                </div>
+            </section>
+            <hr>
+            <section id="hasil">
+                <div>
+                    <h3><b>3. Hasil Perhitungan</b></h3>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="container">
+                            <ul>
+                                <li><b>Faktor</b> : dikalikan dengan nilai mentah telemetri</li>
+                                <li><b>Offset</b> : nilai konstan untuk koreksi hasil perkalian nilai mentah dan Faktor</li>
+                                <li><b>Standar Error</b> : rata-rata error yang didapat dari perbandingan data manual dengan data hasil perhitungan faktor, data mentah telemetri, dan offset</li>
+                                <li>Standar Error yang rendah menunjukkan bahwa hasil perhitungan faktor-mentah-offset mendekati nilai manual</li>
+                                <li>Dari data-data yg dimasukkan, diambil 2 sampel data kemudian Faktor dan Offset dihitung dengan rumus y = mx + c</li>
+                                <li>Dengan y = Data Manual, x = Data Telemetri, m = Faktor, c = Offset</li>
+                                <li>Data di tabel sudah diurutkan dari error terendah ke error tertinggi</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-9" id="result">
 
+                    </div>
                 </div>
-            </div>
+            </section>
         </div>
 
         <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
@@ -127,7 +149,7 @@ window.onload = function() {
 				backgroundColor: 'rgba(0, 255, 255, 0.5)',
 				fill: false,
                 radius: 1,
-				data: teleData,
+				data: [],
 				yAxisID: 'y-axis-1',
 			}, {
 				label: 'Manual',
@@ -136,7 +158,7 @@ window.onload = function() {
 				fill: false,
                 type: 'bubble',
                 radius: 5,
-				data: manualData,
+				data: [],
 				yAxisID: 'y-axis-2'
 			}]
 		},
@@ -253,6 +275,11 @@ function updateChart() {
             teleData.push(teleDict[sampl]);
         }
     }
+
+    // make 2nd section visible
+    let wal = document.getElementById("watch_and_learn");
+    wal.classList.remove("d-none");
+
     console.log(manualData);
     console.log(teleData);
 }
@@ -261,6 +288,10 @@ function calculate() {
     console.log("Calculating");
     console.log(manualData);
     console.log(teleData);
+
+    // make 3rd section visible
+    let res = document.getElementById("result");
+    res.classList.remove("d-none");
 
     let functionList = [];
     teleData.forEach(function(tele1, i1) {
@@ -291,8 +322,7 @@ function calculate() {
     })
     console.log(functionList);
     let result = document.getElementById('result');
-    result.innerHTML = "<h3>Result</h3> \
-                        <table class='table table-bordered'> \
+    result.innerHTML = "<table class='table table-bordered'> \
                             <thead> \
                                 <tr><th>No</th><th>Faktor</th><th>Offset</th><th>Standar Error</th></tr> \
                             </thead> \
@@ -302,6 +332,7 @@ function calculate() {
     functionList.forEach(function(pair, i) {
         functionResult.innerHTML += "<tr>" + `<td>${i + 1}</td><td align="right">${pair[0]}</td><td align="right">${pair[1]}</td><td align="right">${pair[2]} m</td>` + "</tr>";
     });
+
 }
 	    </script>
     </body>
